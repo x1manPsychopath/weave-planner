@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Weave Route Planner</title>
+<meta name="description" content="Fan-made team planner for Fire Emblem: Fortune's Weave: class routes, recruitment gates, unit comparison and deployment checks.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#34389A" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1019" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Weave Planner">
+<style>
+html{color-scheme:light}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font-size:14px}
+img{max-width:100%}
+[hidden]{display:none!important}
+.installbtn{margin-left:auto}
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a loom — a woven header band, tabbed workspaces below, unit cards as warp threads with class chains running across. */
+:root{
+  --paper:#ECEEF5; --surface:#FFFFFF; --sunk:#F4F5FA; --ink:#1B1D33; --muted:#5B5F7E; --line:#D5D8E6;
+  --accent:#C68A12; --accent-ink:#8A5C00; --indigo:#34389A;
+  --fox:#25867D; --lion:#B23838; --wolf:#4469A3; --eagle:#A8457F; --sal:#7B6A24; --neutral:#6B6F8C;
+  --good:#2F8A4E; --warn:#B7791F; --bad:#C0392B;
+  --f-display:"Marcellus", "Trajan Pro", Georgia, serif;
+  --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0F1019; --surface:#171927; --sunk:#12131F; --ink:#E5E6F2; --muted:#9A9EBE; --line:#2A2D45;
+  --accent:#E3AE3C; --accent-ink:#F0C45E; --indigo:#9EA3F2;
+  --fox:#4CC0B4; --lion:#E36D6D; --wolf:#7EA4E0; --eagle:#DC7DB4; --sal:#C9B55F; --neutral:#9A9EBE;
+  --good:#5CC27E; --warn:#E3AE3C; --bad:#EF6B5E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0F1019; --surface:#171927; --sunk:#12131F; --ink:#E5E6F2; --muted:#9A9EBE; --line:#2A2D45;
+  --accent:#E3AE3C; --accent-ink:#F0C45E; --indigo:#9EA3F2;
+  --fox:#4CC0B4; --lion:#E36D6D; --wolf:#7EA4E0; --eagle:#DC7DB4; --sal:#C9B55F; --neutral:#9A9EBE;
+  --good:#5CC27E; --warn:#E3AE3C; --bad:#EF6B5E; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--f-body)}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
+header.band{border-bottom:1px solid var(--line);background:
+  repeating-linear-gradient(90deg,transparent 0 7px,color-mix(in srgb,var(--accent) 14%,transparent) 7px 8px),
+  repeating-linear-gradient(0deg,transparent 0 7px,color-mix(in srgb,var(--indigo) 9%,transparent) 7px 8px),var(--surface)}
+.band .wrap{padding-block:22px 0}
+h1{font:400 clamp(26px,4vw,38px)/1.1 var(--f-display);margin:0;letter-spacing:.02em;text-wrap:balance}
+.sub{color:var(--muted);margin:6px 0 16px;max-width:70ch}
+nav.tabs{display:flex;gap:4px;flex-wrap:wrap}
+nav.tabs button{font:600 14px var(--f-body);border:1px solid var(--line);border-bottom:none;background:var(--sunk);color:var(--muted);padding:9px 16px;border-radius:8px 8px 0 0;cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--paper);color:var(--ink);box-shadow:inset 0 3px 0 var(--accent)}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+select,input[type=search],textarea{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:0;max-width:100%}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:6px 12px;cursor:pointer;font-weight:600}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#1B1D33}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted);padding:4px 8px}
+.btn.ghost:hover{color:var(--bad)}
+section.view{padding-top:20px}
+h2{font:400 22px/1.2 var(--f-display);margin:0 0 4px;letter-spacing:.02em}
+.lead{color:var(--muted);margin:0 0 16px;max-width:75ch}
+.label{font:600 11px var(--f-body);text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:1px 8px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
+.c-cai{color:var(--fox)}.c-dietrich{color:var(--lion)}.c-theodora{color:var(--wolf)}.c-leda{color:var(--eagle)}.c-part3{color:var(--sal)}.c-none{color:var(--neutral)}
+
+/* planner */
+.pathbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.pathbtn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;cursor:pointer;min-width:140px;text-align:left}
+.pathbtn .emb{font:400 17px var(--f-display)}
+.pathbtn small{color:var(--muted)}
+.pathbtn[aria-pressed="true"]{border-color:currentColor;box-shadow:inset 4px 0 0 currentColor}
+.plannergrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+@media (max-width:860px){.plannergrid{grid-template-columns:minmax(0,1fr)}}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.ucard{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.ucard header{display:flex;gap:10px;align-items:center}
+.mono-badge{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font:400 16px var(--f-display);border:2px solid currentColor;flex:none}
+.ucard h3{margin:0;font:600 17px var(--f-body)}
+.ucard header .grow{flex:1;min-width:0}
+ol.chain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;position:relative}
+ol.chain li{display:grid;grid-template-columns:78px minmax(0,1fr);gap:8px;align-items:center}
+.tier{font:600 10.5px var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.tier.t-Master{color:var(--accent-ink)}.tier.t-Divine{color:var(--eagle)}
+ol.chain select{width:100%}
+.inf{font-size:11.5px;color:var(--warn);grid-column:2}
+.flags{display:flex;flex-direction:column;gap:4px}
+.flag{font-size:13px;padding:6px 8px;border-radius:6px;background:color-mix(in srgb,var(--warn) 12%,transparent);border-left:3px solid var(--warn)}
+.flag.bad{background:color-mix(in srgb,var(--bad) 12%,transparent);border-left-color:var(--bad)}
+.minibars{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;align-items:end}
+.mb{display:flex;flex-direction:column;align-items:center;gap:2px}
+.mb .col{width:100%;height:46px;background:var(--sunk);border-radius:3px;position:relative;overflow:hidden}
+.mb .col i{position:absolute;inset:auto 0 0 0;background:var(--accent);border-radius:3px 3px 0 0}
+.mb .col i.hi{background:var(--indigo)}
+.mb b{font:600 11px var(--f-mono)}
+.mb span{font-size:10px;color:var(--muted);letter-spacing:.04em}
+aside.summary{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:14px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:860px){aside.summary{position:static}}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:14px}
+.kv dt{color:var(--muted)}.kv dd{margin:0;font-family:var(--f-mono);text-align:right}
+.addrow{display:flex;gap:8px;flex-wrap:wrap}
+.addrow select{flex:1;min-width:160px}
+.empty{border:1px dashed var(--line);border-radius:10px;padding:28px;text-align:center;color:var(--muted)}
+textarea{width:100%;min-height:70px;font:12px var(--f-mono)}
+.progress{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:12px}
+.progress label{display:flex;align-items:center;gap:6px;font-weight:600;font-size:14px}
+.progress input{width:64px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 6px;font-family:var(--f-mono)}
+.progress .note{flex-basis:100%}
+.s-got{--st:var(--good)}
+.lineups{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:12px}
+.lchips{display:flex;flex-wrap:wrap;gap:6px}
+.lchip{border:1px solid var(--line);background:var(--sunk);border-radius:99px;padding:4px 12px;font-weight:600;font-size:13px;cursor:pointer;color:var(--ink)}
+.lchip .mono{color:var(--muted);font-size:12px;margin-left:2px}
+.lchip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#1B1D33}
+.lchip[aria-pressed="true"] .mono{color:#1B1D33}
+.lform{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.lform input{flex:1;min-width:160px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.btn.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.dtable tr.on td{background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.dtable tr.notgot td{color:var(--muted)}
+.dtable select{min-width:160px}
+.dtable input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+.wgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px}
+.wcell{border:1px solid var(--line);border-radius:6px;padding:6px 4px;text-align:center;display:flex;flex-direction:column;gap:1px}
+.wcell b{font:600 18px var(--f-mono)}
+.wcell span{font-size:10.5px;color:var(--muted);line-height:1.2}
+.wcell.zero{border-style:dashed;opacity:.6}
+.wcell.zero b{color:var(--bad)}
+.flag.ok{background:color-mix(in srgb,var(--good) 12%,transparent);border-left-color:var(--good)}
+.kv-roles dd{text-align:right}
+.gotbox{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer}
+.gotbox input{accent-color:var(--good);width:16px;height:16px}
+.ucard.is-got{border-color:color-mix(in srgb,var(--good) 45%,var(--line))}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:4px 0 8px}
+.seg button{border:none;background:var(--surface);padding:4px 10px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#1B1D33}
+.s-auto{--st:var(--indigo)}.s-ready{--st:var(--fox)}.s-locked{--st:var(--warn)}.s-na{--st:var(--bad)}.s-later{--st:var(--sal)}.s-carry{--st:var(--muted)}
+.recruit{display:flex;flex-direction:column;gap:2px;font-size:13px;padding:6px 10px;border-radius:6px;border-left:3px solid var(--st);background:color-mix(in srgb,var(--st) 10%,transparent)}
+.recruit strong{color:var(--st);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--st);margin-right:6px;vertical-align:middle}
+.rtable td,.rtable th{font-size:13px}
+.rtable td.s{border-left:3px solid var(--st)}
+
+/* compare */
+.slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+@media (max-width:760px){.slots{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.slot{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.slot select{width:100%}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+thead th{font:600 11px var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--sunk);position:sticky;top:0}
+tbody tr:last-child td{border-bottom:none}
+td.num,th.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.cbar{display:flex;align-items:center;gap:8px;min-width:120px}
+.cbar .track{flex:1;height:8px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.cbar .track i{display:block;height:100%;background:var(--muted);border-radius:99px}
+.cbar.best .track i{background:var(--accent)}
+.cbar b{font:600 13px var(--f-mono);width:3.2ch;text-align:right}
+.cbar.best b{color:var(--accent-ink)}
+.delta{font:11px var(--f-mono);color:var(--muted)}
+.toggles{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.pos{color:var(--good)}.neg{color:var(--bad)}
+th.sort{cursor:pointer}th.sort:hover{color:var(--ink)}
+
+/* routes */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filters input{flex:1;min-width:180px}
+details.route{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
+details.route summary{list-style:none;cursor:pointer;padding:10px 14px;display:grid;grid-template-columns:150px minmax(0,1fr) auto;gap:10px;align-items:center}
+details.route summary::-webkit-details-marker{display:none}
+@media (max-width:640px){details.route summary{grid-template-columns:minmax(0,1fr)}}
+.rname{font-weight:700}
+.pathline{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:13.5px;min-width:0}
+.pathline .arrow{color:var(--accent)}
+.pathline .opt{padding:1px 7px;border-radius:4px;background:var(--sunk)}
+.pathline .opt.end{background:color-mix(in srgb,var(--accent) 20%,transparent);font-weight:600}
+.rbody{padding:4px 14px 14px;display:flex;flex-direction:column;gap:12px}
+.fit{display:flex;flex-wrap:wrap;gap:6px}
+.fit span{font-size:13px;padding:2px 8px;border:1px solid var(--line);border-radius:6px}
+.fit span b{font-family:var(--f-mono);color:var(--accent-ink);margin-left:4px}
+.note{font-size:13px;color:var(--muted)}
+footer.src{margin-top:32px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+footer.src a{color:var(--indigo)}
+.ladder{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:14px}
+.rung{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
+.rung strong{display:block;font:400 15px var(--f-display)}
+@media (prefers-reduced-motion:no-preference){.mb .col i,.cbar .track i{transition:height .25s,width .25s}}
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="wrap">
+    <h1>Weave Route Planner</h1>
+    <p class="sub">Team builder for <em>Fire Emblem: Fortune's Weave</em>. Plan each Flame Lord's path, chart every unit's certification route, and compare growth rates side by side in any class.</p>
+    <button class="btn installbtn" id="installbtn" hidden style="float:right;margin-top:-6px">Install app</button>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="planner" aria-selected="true">Team Planner</button>
+      <button role="tab" data-tab="deploy" aria-selected="false">Deploy</button>
+      <button role="tab" data-tab="compare" aria-selected="false">Compare Units</button>
+      <button role="tab" data-tab="routes" aria-selected="false">Class Routes</button>
+      <button role="tab" data-tab="classes" aria-selected="false">Classes</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="view" id="v-planner"></section>
+  <section class="view" id="v-deploy" hidden></section>
+  <section class="view" id="v-compare" hidden></section>
+  <section class="view" id="v-routes" hidden></section>
+  <section class="view" id="v-classes" hidden></section>
+
+  <footer class="src">
+    <p><strong>Data sources.</strong> Class growth modifiers, stat bonuses, movement, weapons, masteries and suggested certification skills: <a href="https://marigoldfe.com/fortunes-weave/classes" target="_blank" rel="noopener">Marigold</a>. Personal growth rates: <a href="https://www.keengamer.com/articles/guides/fire-emblem-fortunes-weave-growth-rates-for-all-characters-and-classes/" target="_blank" rel="noopener">KeenGamer growth table</a>. Recommended class routes and alternatives: <a href="https://www.keengamer.com/articles/guides/fire-emblem-fortunes-weave-best-class-for-every-character/" target="_blank" rel="noopener">KeenGamer best-class guide</a>. Recruitment gates and Part II/III joins: <a href="https://www.keengamer.com/articles/guides/fire-emblem-fortunes-weave-all-characters-recruitment-guide/" target="_blank" rel="noopener">KeenGamer recruitment guide</a>, cross-checked against the chapter timings and Cai-path gates in <a href="https://marigoldfe.com/fortunes-weave/planner" target="_blank" rel="noopener">Marigold's planner</a>. Where the route guide recommends a class the unit cannot take (Orichaldia is Cai-only; Wing Soldier and Celestial Trooper are female-only), the planner flags it instead of hiding it. Steps marked <em>inferred</em> fill gaps the guide left open. Base stats are not included because no complete public table exists yet.</p>
+    <p>Fan-made tool. Not affiliated with Nintendo or Intelligent Systems.</p>
+  </footer>
+</main>
+
+<script>
+const S=['HP','Str','Mag','Spd','Dex','Def','Res','Lck','Cha'];
+const W={Sw:'Sword',Sp:'Spear',Ax:'Axe',Bw:'Bow',Ga:'Gauntlets',BM:'Black Magic',WM:'White Magic',Ot:'Elephant'};
+const TIERS=['Starting','Beginner','Specialty','Advanced','Master','Divine'];
+const TIERINFO={Beginner:'Beginner License · Ideal Lv 5 · Renown 1',Specialty:'Specialty License · Ideal Lv 20 · Renown 4',Advanced:'Advanced License · Ideal Lv 35 · Renown 8',Master:'Master License · Ideal Lv 45 · Part III',Divine:'Unique item per class · one holder'};
+const LIC={Beginner:'Beginner',Specialty:'Specialty',Advanced:'Advanced',Master:'Master'};
+
+const C={};
+function cl(n,t,ty,mov,b,g,w,pri,sec,m,o={}){C[n]=Object.assign({n,t,ty,mov,b:b.split(',').map(Number),g:g.split(',').map(Number),w:w.split(' '),pri,sec,m},o)}
+const Z='0,0,0,0,0,0,0,0,0';
+cl('Commoner','Starting','Infantry',4,Z,Z,'Sw Sp Ax Bw Ga BM WM','','','Combat Basics');
+cl('Noble','Starting','Infantry',4,Z,Z,'Sw Sp Ax Bw Ga BM WM','','','Combat Basics');
+cl('Diviner','Beginner','Infantry',4,'0,0,1,0,0,0,1,0,0','5,-5,15,0,5,-5,10,0,0','Sw Ax Ga BM WM','','White Magic D / Black Magic D','Magic Basics');
+cl('Gladiator','Beginner','Infantry',4,'1,1,0,0,0,0,0,0,0','10,10,0,0,0,0,0,0,0','Sw Ax Ga','','Gauntlets D / Axe D / Sword D','Attack Basics');
+cl('Hunter','Beginner','Infantry',4,'0,0,0,1,1,0,0,0,0','10,0,0,10,10,0,0,0,0','Sw Bw','','Bow D / Sword D','Hunting Basics');
+cl('Ornius Rider','Beginner','Cavalry',5,'0,0,0,3,2,0,0,1,0','10,0,0,10,5,0,5,5,0','Sw Sp Ax','Riding E+','Axe D / Spear D','Offense Basics');
+cl('Soldier','Beginner','Infantry · Armored',4,'0,1,0,0,0,1,0,0,0','10,5,0,-5,5,10,0,0,0','Sw Sp Ax','','Axe D / Spear D','Defense Basics');
+cl('Archer','Specialty','Infantry',5,'0,0,0,2,2,1,0,0,0','10,0,0,10,15,5,0,5,5','Bw','Bow C','','Crescendo');
+cl('Armored Knight','Specialty','Infantry · Armored',4,'2,1,0,-2,0,4,0,0,0','10,10,-5,-5,5,25,-5,0,5','Sw Sp Ax','Armor E+','Axe C / Spear C','Great Counter');
+cl('Armored Ornius Rider','Specialty','Cavalry',6,'1,0,0,2,0,2,0,0,0','10,0,-5,10,5,10,0,5,5','Sw Sp Ax','Riding D','Axe C / Spear C','Sense Threat');
+cl('Brigand','Specialty','Infantry',5,'3,2,0,0,0,1,-1,0,0','15,15,-5,5,0,5,0,0,5','Sw Ax Ga','','Axe C / Sword C','Regroup');
+cl('Charioteer','Specialty','Cavalry',5,'3,1,0,-2,3,3,0,0,1','10,5,-5,-5,15,10,0,5,10','Bw','Riding D, Bow C','','Charger',{scale:1});
+cl('Light Cavalry','Specialty','Cavalry',6,'1,1,0,1,0,2,0,0,1','10,5,-5,5,0,5,0,5,10','Sw Sp Ax','Riding D','Spear C / Sword C','Bolster Health');
+cl('Myrmidon','Specialty','Infantry',5,'1,0,0,2,0,0,-1,0,0','10,0,0,15,10,0,0,5,5','Sw Sp','Sword C','','Ravaging Arts');
+cl('Priest','Specialty','Infantry',5,'0,0,1,0,0,0,3,2,1','5,-5,10,5,5,-10,15,15,10','Ax Ga BM WM','White Magic C','','Piety');
+cl('Pugilist','Specialty','Infantry',5,'0,1,0,1,0,2,-1,0,0','15,10,-5,10,5,10,0,0,5','Ga','Gauntlets C','','Attack, Get Back');
+cl('Rogue','Specialty','Infantry',5,'0,0,0,3,1,0,1,1,-1','10,0,0,15,10,0,5,5,0','Sw Bw','','Bow C / Sword C','In Shadow',{util:'Locktouch, Search'});
+cl('Shaman','Specialty','Infantry',5,'0,0,2,1,1,0,2,0,-1','5,-5,15,10,10,-10,10,10,0','Sw Ga BM WM','Black Magic C','','Bind Dexterity');
+cl('Wing Soldier','Specialty','Flying',6,'0,0,0,4,1,1,2,0,1','10,0,5,0,5,5,5,5,10','Sw Sp','Flying D','Sword C / Spear C','Protecting Wings',{ex:'female'});
+cl('Bardinger','Advanced','Cavalry',6,'3,0,0,1,0,1,0,0,3','10,10,-5,0,0,5,10,5,10','Sw Sp Ax','Riding C','Spear B / Sword B','Aegis');
+cl('Bishop','Advanced','Infantry',5,'1,0,3,1,0,0,5,3,3','10,-5,15,0,5,-10,20,20,10','Ax Ga BM WM','White Magic B','','Barrier');
+cl('Blacksmith','Advanced','Infantry',5,'5,1,1,1,0,3,1,0,0','15,10,10,0,5,10,10,0,5','Ax BM','Black Magic D, Axe C','','Makeshift');
+cl('Caladrius','Advanced','Cavalry',6,'2,0,1,3,0,1,2,0,0','15,0,10,10,5,10,10,5,5','Sw Sp Ax BM','Riding D, Black Magic B','','Overtake');
+cl('Cataphract','Advanced','Cavalry · Armored',5,'5,2,0,-1,0,5,0,0,0','15,15,-5,-10,0,10,-5,0,5','Sw Sp Ax','Riding D, Armor E+','Spear B / Axe B','Pavise');
+cl('Dancer','Advanced','Infantry',5,'4,0,0,9,5,0,0,0,5','15,5,0,25,10,0,5,10,20','Sw Bw','','Sword B / Bow B','Special Dance',{uniq:1,item:"Dancer's Necklace"});
+cl('Dragoon','Advanced','Flying',6,'2,1,0,3,1,1,0,0,0','15,5,0,0,5,10,10,10,5','Sw Sp Ax','Flying C','Spear B / Axe B','Besieger');
+cl('Dreadnought','Advanced','Infantry · Armored',4,'5,3,0,-5,0,9,-1,0,0','15,15,-5,-10,5,30,-10,0,5','Sp Ax','Armor D','Axe B / Spear B','Focused Counter');
+cl('Elephant Rider','Advanced','Cavalry',5,'10,2,0,-5,3,7,0,0,3','20,10,-5,20,-10,15,-5,5,10','Ot','Riding C','','Elephant Vanguard',{item:'Elephant License',scale:1});
+cl('Forest Knight','Advanced','Cavalry',6,'1,0,0,5,2,1,0,0,0','10,5,0,10,10,5,5,5,5','Sw Bw','Riding D, Bow B','','Hunter\'s Eye');
+cl('Guardian','Advanced','Infantry',5,'3,1,0,1,0,3,4,0,0','10,10,0,0,5,10,15,15,5','Sp WM','Spear B','','Brace');
+cl('Ovate','Advanced','Infantry',5,'1,0,4,3,4,0,4,0,-1','10,-5,20,5,15,-10,15,10,0','Sw Ga BM WM','Black Magic B','','Bind Speed');
+cl('Ranger','Advanced','Infantry',5,'1,0,0,7,4,0,1,1,-1','10,5,0,15,15,0,10,15,0','Sw Bw','','Sword B / Bow B','Countershot',{util:'Locktouch, Advanced Search'});
+cl('Shido','Advanced','Infantry',5,'3,0,0,7,3,0,0,0,0','10,5,0,15,10,0,-5,5,5','Sw Sp','Sword B','','Ever Vigilant');
+cl('Sniper','Advanced','Infantry',5,'1,0,0,5,5,0,0,0,0','10,5,0,10,20,5,5,5,5','Bw','Bow B','','Marksmanship');
+cl('Troubadour','Advanced','Cavalry',6,'0,0,1,1,1,1,2,0,3','10,0,15,5,0,5,15,15,10','BM WM','Riding D','Black Magic B / White Magic B','Song of Courage');
+cl('Warrior','Advanced','Infantry',5,'4,4,0,1,0,0,0,0,0','20,20,-5,0,0,5,-5,0,5','Sw Ax Ga','','Gauntlets B / Axe B / Sword B','Practiced Art');
+cl('Battlemaster','Master','Infantry',5,'13,6,0,2,0,4,0,0,0','25,25,-5,-5,5,10,-5,-5,5','Sw Ax Ga','','Sword A / Axe A / Gauntlets A','War Master\'s Strike');
+cl('Bau Lord','Master','Flying',7,'5,2,0,3,3,3,0,0,0','15,5,0,5,0,10,10,10,5','Sw Sp Ax','Flying C','Spear A / Axe A','Ambush');
+cl('Bow Adept','Master','Infantry',5,'4,2,0,5,9,0,0,0,0','15,5,0,15,20,5,5,5,5','Bw','Bow A','','Sky Hunter');
+cl('Bow Knight','Master','Cavalry',7,'3,2,0,7,5,2,0,0,0','10,10,0,15,10,5,0,5,5','Sw Bw','Bow A, Riding D','','Hunter\'s Cross');
+cl('Castle Knight','Master','Infantry · Armored',4,'9,6,0,-6,4,13,-2,0,0','25,20,-5,-15,5,30,-10,0,5','Sp Ax','Armor C','Spear A / Axe A','Intercept');
+cl('Celestial Trooper','Master','Flying',7,'3,0,0,5,3,0,5,0,2','15,5,-5,10,5,5,15,15,10','Sw Sp','Flying C','Sword A / Spear A','Lightning Reflexes',{ex:'female'});
+cl('Druid','Master','Infantry',5,'4,0,7,4,7,0,5,0,-2','10,-5,30,15,10,-10,20,10,0','Sw Ga BM','Black Magic A','','Bind Resistance');
+cl('Great Knight','Master','Cavalry · Armored',6,'12,5,0,-4,2,5,0,0,0','20,20,-5,-10,0,15,-10,0,5','Sw Sp Ax','Riding D, Armor D','Spear A / Axe A','Fierce Shield');
+cl('High Savant','Master','Cavalry',7,'5,2,2,3,3,2,0,0,0','10,15,15,10,5,5,5,5,5','Sw BM','Sword B, Black Magic D, Riding D','','Dark Moon');
+cl('Orichaldia','Master','Cavalry',7,'7,3,0,2,3,2,0,0,2','15,15,-5,0,5,5,5,5,10','Sw Sp Ax','Riding B','Sword A / Spear A','Fierce Spear',{ex:'Cai',uniq:1});
+cl('Sentinel','Master','Infantry',5,'5,4,0,2,4,4,5,0,0','15,15,0,5,5,10,15,5,5','Sp WM','Spear A','','Resolute Stance');
+cl('Shadow Seeker','Master','Infantry',5,'4,0,0,9,7,0,0,2,-2','15,5,0,15,25,0,10,15,0','Sw Bw','','Sword A / Bow A','Dropshadow Blade',{util:'Locktouch, Master Search'});
+cl('Swordmaster','Master','Infantry',5,'5,2,0,7,7,0,0,0,0','15,10,0,20,15,0,0,5,5','Sw Sp','Sword A','','Astra');
+cl('Valkyrium','Master','Cavalry',7,'2,0,2,2,3,2,3,0,2','10,0,15,5,5,5,10,15,10','BM WM','Riding D','Black Magic A / White Magic A','Song of Calm');
+cl('War Monk','Master','Infantry',5,'5,2,0,5,2,2,4,0,0','15,10,0,15,0,5,15,5,5','Ga WM','Gauntlets B, White Magic D','','Strike and Heal');
+cl('Wiseman','Master','Infantry',5,'4,0,5,2,2,0,9,4,2','10,-5,20,0,5,-10,25,20,10','Ax Ga WM','White Magic A','','Dominate Magic');
+cl('The Apsara','Divine','Infantry',6,'5,2,4,7,5,0,0,0,9','15,5,10,25,15,5,5,10,30','Sw Bw','Bow C, Sword A','','Divine Dance',{uniq:1,item:"Muses' Necklace"});
+cl('The Avatar','Divine','Infantry',6,'5,0,9,2,2,0,9,5,2','10,-5,30,10,5,-5,30,20,10','Sw Ax Ga BM WM','','White Magic S / Black Magic S','Divine Law',{uniq:1,item:'Lotus of Reincarnation'});
+cl('The Blade','Divine','Infantry',6,'7,4,4,7,7,0,0,0,2','15,10,10,20,20,5,5,5,10','Sw Sp','Sword S','','Divine Insight',{uniq:1,item:'Demonic Swordguard'});
+cl('The Calamity','Divine','Infantry',6,'5,2,4,7,5,0,4,4,0','15,5,15,25,20,5,15,15,5','Sw Bw','','Bow S / Sword S','Divine Will',{uniq:1,item:'Crystal of Darkness'});
+cl('The Cavalier','Divine','Cavalry',8,'11,3,0,4,5,5,1,0,2','20,15,5,10,10,15,10,5,15','Sw Sp Ax','Riding A','Axe S / Spear S / Sword S','Divine Dexterity',{uniq:1,item:'Divinium Saddle'});
+cl('The Eternal','Divine','Infantry',6,'12,6,0,2,1,5,0,0,2','30,30,0,10,0,15,0,0,10','Sw Ax Ga','','Gauntlets S / Axe S / Sword S','Divine Might',{uniq:1,item:'Scales of Judgment'});
+cl('The Godhand','Divine','Infantry',6,'7,4,4,5,2,4,5,0,2','15,10,10,15,5,10,15,5,10','Ga WM','White Magic C, Gauntlets S','','Divine Adornment',{uniq:1,item:"Emperor's Sash"});
+cl('The Trident','Divine','Infantry',6,'7,4,4,2,4,5,5,0,2','15,15,5,10,10,15,15,5,10','Sp WM','Spear S','','Divine Wall',{uniq:1,item:'Trident'});
+
+const PATHS={cai:{lord:'Cai',emb:'Fox',clan:'Ribeira Winds',cls:'c-cai'},dietrich:{lord:'Dietrich',emb:'Lion',clan:'House Lamine',cls:'c-dietrich'},theodora:{lord:'Theodora',emb:'Wolf',clan:"Megaira's Beacon",cls:'c-theodora'},leda:{lord:'Leda',emb:'Eagle',clan:'Rose Tempest',cls:'c-leda'},part3:{lord:'Salvation',emb:'Timeskip',clan:"Promised One's Army",cls:'c-part3'}};
+const CLANPATH={};for(const k in PATHS)CLANPATH[PATHS[k].clan]=k;
+
+const U=[];
+function un(n,f,g,best,path,alt,role,o={}){U.push(Object.assign({n,f,g:g.split(',').map(Number),best,path,alt,role,home:CLANPATH[f]||null},o))}
+un('Cai','Ribeira Winds','45,45,40,45,45,35,35,40,40','Orichaldia','Ornius Rider>Bardinger>Orichaldia','Celestial Trooper','Mounted spear striker',{note:'Guide lists the first step as general mounted training.'});
+un('Tialla','Ribeira Winds','30,25,45,35,40,20,40,50,45','Wiseman','Diviner>Priest>Bishop>Wiseman','Valkyrium','Dedicated healer');
+un('Peter','Ribeira Winds','40,35,20,45,60,30,25,35,30','Bow Adept','Hunter>Archer>Sniper>Bow Adept','Bow Knight','Pure archer');
+un('Ultand','Ribeira Winds','45,40,40,35,40,35,45,55,50','Sentinel','Soldier>Guardian>Sentinel','Wiseman','Frontline spear healer',{note:'Guide pairs the Soldier step with White Magic training.'});
+un('Dietrich','House Lamine','50,45,30,50,60,40,30,50,60','The Blade','Gladiator>Myrmidon>Shido>Shadow Seeker>The Blade','Shadow Seeker / Swordmaster','Crit-focused swordsman');
+un('Fabio','House Lamine','40,25,50,35,40,30,45,35,30','Druid','Diviner>Shaman>Ovate>Druid','High Savant','Offensive mage');
+un('Esmeralda','House Lamine','55,55,20,35,35,45,25,35,30','Castle Knight','Soldier>Armored Knight>Dreadnought>Castle Knight','Great Knight','Chokepoint wall');
+un('Mikaela','House Lamine','50,45,30,40,35,40,25,30,40','Battlemaster','Gladiator>Brigand>Warrior>Battlemaster','Great Knight','Axe bruiser');
+un('Theodora',"Megaira's Beacon",'70,50,30,40,40,40,30,30,50','Sentinel','Soldier>Armored Knight/Priest>Guardian>Sentinel','Great Knight','Durable spear lord');
+un('Bonaventure',"Megaira's Beacon",'35,35,45,40,50,30,40,35,40','High Savant','Diviner>*Troubadour/Caladrius>High Savant','Druid','Mobile mage',{note:'Guide says "Diviner + Riding training, then a mounted magic route". Troubadour or Caladrius are the mounted magic classes that fit; train Riding and Sword for High Savant.'});
+un('Tobias',"Megaira's Beacon",'55,60,15,25,30,45,20,40,35','Battlemaster','Gladiator>Brigand/Pugilist>Warrior>Battlemaster','Castle Knight','Strength bruiser');
+un('Lysander',"Megaira's Beacon",'45,40,25,50,35,40,25,30,30','Orichaldia','Soldier/Ornius Rider>Light Cavalry>Bardinger>Orichaldia','Great Knight','Fast cavalry');
+un('Lilian',"Megaira's Beacon",'35,35,30,40,55,30,35,50,25','Bow Adept','Hunter>Archer>Sniper>Bow Adept','Bow Knight','Pure archer');
+un('Leda','Rose Tempest','40,35,35,65,50,30,35,25,55','Dancer','Hunter>Myrmidon/Rogue>Dancer>The Apsara','Shadow Seeker','Dancer, turn economy',{note:'Dancer unlocks through her Chapter 9 quest. Stay in Dancer most of the game.'});
+un('Buccar','Rose Tempest','50,50,20,25,40,45,20,30,35','Castle Knight','Soldier>Armored Knight>Dreadnought>Castle Knight','Great Knight','Armored wall');
+un('Sirocco','Rose Tempest','40,40,40,45,50,35,35,50,45','High Savant','Diviner>*Troubadour/Caladrius>High Savant','Druid','Mobile mage',{note:'Guide leaves the mounted magic step open; Troubadour or Caladrius fit.'});
+un('Mu','Rose Tempest','30,30,5,30,30,20,10,10,20','Battlemaster','Gladiator>Brigand/Pugilist>Warrior>Battlemaster','War Monk','Physical powerhouse',{sog:20,note:'Signs of Growth adds +20 to every growth. Values shown here include it.'});
+un('Olympia','Rose Tempest','35,35,50,35,35,30,40,40,40','Wiseman','Diviner>Priest>Bishop>Wiseman','Valkyrium','Dedicated healer');
+un('Bertrand','Mane of Flames','50,55,15,45,50,45,20,30,50','Battlemaster','Gladiator>Brigand/Pugilist>Warrior>Battlemaster','Castle Knight','Physical bruiser');
+un('Gaitz','Mane of Flames','50,50,20,40,45,45,25,40,45','Swordmaster','Gladiator/Hunter>Myrmidon>Shido>Swordmaster','Shadow Seeker','Sword burst');
+un('Dante','Mane of Flames','30,30,45,40,40,20,40,45,30','Druid','Diviner>Shaman>Ovate>Druid','High Savant','Offensive mage, team buffer');
+un('Goliath','Mane of Flames','55,60,5,15,30,50,20,35,20','Castle Knight','Soldier>Armored Knight>Dreadnought>Castle Knight','Great Knight','Physical wall');
+un('Jester','Mane of Flames','40,35,15,60,45,35,25,40,40','Swordmaster','Hunter>Myrmidon>Shido>Swordmaster','Dancer','Fast swordsman');
+un('Talimun',"Moon's Lie",'45,40,45,40,45,35,40,60,50','Swordmaster','Gladiator/Hunter>Myrmidon>Shido>Swordmaster','Shadow Seeker','Swordsman');
+un('Ursula',"Moon's Lie",'40,35,35,50,50,35,30,40,45','Bow Adept','Hunter>Archer/Rogue>Sniper>Bow Adept','Shadow Seeker','Anti-air archer');
+un('Simon',"Moon's Lie",'50,50,20,35,40,40,25,50,35','Battlemaster','Gladiator>Brigand/Pugilist>Warrior>Battlemaster','Castle Knight','Physical bruiser');
+un('Ludia',"Moon's Lie",'40,35,20,55,45,30,20,30,30','Swordmaster','Hunter/Gladiator>Myrmidon>Shido>Swordmaster','Shadow Seeker','Fast swordsman');
+un('Fianna',"Moon's Lie",'30,35,55,30,40,20,45,25,40','Wiseman','Diviner>Priest>Bishop>Wiseman','Valkyrium','Healer');
+un('Orchel',"Linaria's Morning Dew",'30,60,45,10,20,60,60,20,60','Battlemaster','Gladiator>Pugilist/Brigand>Warrior>Battlemaster','War Monk','Slow heavy hitter');
+un('Diego',"Linaria's Morning Dew",'45,40,20,45,60,35,20,35,30','Shadow Seeker','Hunter>Rogue>Ranger/Shido>Shadow Seeker','Bow Adept','Utility skirmisher');
+un('Ninae',"Linaria's Morning Dew",'45,45,35,35,45,35,45,50,40','Wiseman','Diviner>Priest>Bishop>Wiseman','Sentinel','Support healer');
+un('Seteth',"Linaria's Morning Dew",'45,45,30,40,45,40,35,30,50','Bau Lord','Ornius Rider>Wing Soldier/Armored Ornius Rider>Dragoon>Bau Lord','Celestial Trooper','Aggressive flier');
+un('Loretta',"Linaria's Morning Dew",'35,35,35,55,40,30,40,30,30','Swordmaster','Hunter/Gladiator>Myrmidon>Shido>Swordmaster','Shadow Seeker','Fast swordsman');
+un('Anatolia','Brides of the Pale Raven','40,35,50,50,45,35,40,40,50','War Monk','Diviner/Gladiator>Priest/Pugilist>War Monk','Battlemaster','Brawler-healer');
+un('Sha Lan','Brides of the Pale Raven','35,30,45,35,50,30,45,35,40','Wiseman','Diviner>Priest>Bishop>Wiseman','Valkyrium','Healer');
+un('Nezha','Brides of the Pale Raven','45,55,25,45,50,35,25,30,25','Swordmaster','Gladiator/Hunter>Myrmidon>Shido>Swordmaster','Dancer / Shadow Seeker','Player-phase swordsman');
+un('Dadao','Brides of the Pale Raven','50,55,20,30,35,45,20,25,30','Battlemaster','Gladiator>Brigand/Pugilist>Warrior>Battlemaster','Castle Knight','Axe bruiser');
+un('Halvin','Brides of the Pale Raven','35,35,30,45,60,30,25,40,35','Bow Adept','Hunter>Archer>Sniper>Bow Adept','Bow Knight','Pure archer');
+un('Benditz','Thundercloud Knights','50,35,20,35,50,35,25,30,35','Bow Knight','Hunter>Archer/Light Cavalry>Forest Knight>Bow Knight','Bow Adept','Mounted archer');
+un('Alexandra','Silver Knights','30,35,35,55,45,30,40,50,50','Celestial Trooper','Ornius Rider>Wing Soldier>Dragoon>Celestial Trooper','Bau Lord','Evasive flier');
+un('Nuzzuo','Minor Faction','50,50,15,55,45,20,15,25,35','Shadow Seeker','Hunter>Rogue>Ranger/Shido>Shadow Seeker','Swordmaster','Utility skirmisher');
+un('Zarcone',"Gaia's Brigadiers",'40,30,20,35,60,30,25,30,15','Battlemaster','Gladiator>Brigand>Warrior>Battlemaster','Castle Knight','Axe specialist');
+un('Jasmine','Palma Fighters','50,40,20,30,45,45,25,40,45','Castle Knight','Soldier>Armored Knight>Dreadnought>Castle Knight','Great Knight','Counter tank');
+un('Kiroc','Minor Faction','55,40,15,55,50,30,15,30,25','Shadow Seeker','Hunter>Rogue>Ranger/Shido>Shadow Seeker','Bow Adept','Flanker');
+un('Inyoni','Minor Faction','40,50,20,35,40,40,30,40,30','Bow Adept','Hunter>Archer>Sniper>Bow Adept','Bow Knight','Armor-piercing archer');
+un('Peppe','Brigid Army','30,30,25,60,45,30,30,45,30','Bow Knight','Hunter>Archer/Light Cavalry>Forest Knight>Bow Knight','Bow Adept','Mounted archer');
+un('Guzran','Neutral','45,45,20,50,45,35,20,45,30','Shadow Seeker','Hunter>Rogue>Ranger/Shido>Shadow Seeker','Swordmaster','Flexible skirmisher');
+un('Nydine','Neutral','45,40,30,45,40,30,25,35,35','Celestial Trooper','Ornius Rider>Wing Soldier>Dragoon>Celestial Trooper','Bau Lord','Evasive flier');
+un('Io','Neutral','45,40,25,35,45,40,25,35,35','Great Knight','Soldier>Light Cavalry/Armored Knight>Cataphract>Great Knight','Orichaldia','Mobile tank');
+un('Catania','Neutral','35,35,35,55,50,30,35,40,45','Swordmaster','Hunter/Gladiator>Myrmidon>Shido>Swordmaster','Shadow Seeker','Fast swordsman');
+un('Noctula','Neutral','50,45,20,45,40,40,20,35,30','Battlemaster','Gladiator>Pugilist>Warrior/War Monk>Battlemaster','War Monk','Brawler');
+un('Yang Jie','Neutral','50,35,40,35,35,30,40,40,25','War Monk','Gladiator/Diviner>Pugilist/Priest>War Monk','Battlemaster','Brawler-healer');
+un('Majide','Neutral','65,50,15,20,30,40,10,25,5','Battlemaster','Gladiator>Brigand>Warrior>Battlemaster','Great Knight','Boss killer');
+un('Centurio','Dagdan Empire','45,45,25,40,50,50,30,30,30','Castle Knight','Soldier>Armored Knight>Dreadnought>Castle Knight','Great Knight','Armored wall');
+un('Sofia','Dagdan Empire','35,30,45,40,30,25,40,30,40','Wiseman','Diviner>Priest>Bishop>Wiseman','Valkyrium','Healer');
+un('Nathan','Kingdom of Arago','55,60,15,25,60,45,15,25,30','Great Knight','Soldier>Light Cavalry/Armored Knight>Cataphract>Great Knight','Battlemaster','Mounted heavy hitter');
+un('Creek','Kingdom of Arago','45,50,15,60,50,35,20,30,35','Great Knight','Soldier>Light Cavalry/Armored Knight>Cataphract>Great Knight','Castle Knight','Mounted tank');
+un('Eshmel',"Promised One's Army",'50,45,45,45,45,35,35,40,50','Sentinel','Soldier>Guardian>Sentinel','Orichaldia','Frontline support');
+un('Hong Hua',"Promised One's Army",'40,30,45,45,45,30,45,30,40','Druid','Diviner>Shaman>Ovate>Druid','High Savant','Offensive mage');
+un('Troy',"Promised One's Army",'40,45,45,50,40,30,30,30,30','War Monk','Gladiator/Diviner>Pugilist/Priest>War Monk','Battlemaster','Brawler-healer');
+un('Tahonia','Part III Recruit','65,50,5,20,40,45,35,20,40','','','','Late joiner, keep class');
+un('Aswan','Part III Recruit','40,35,10,40,50,30,15,30,20','','','','Late joiner, keep class');
+un('Klapka','Part III Recruit','40,40,10,25,45,50,15,25,35','','','','Late joiner, keep class');
+
+/* Recruitment: order Cai, Dietrich, Theodora, Leda. A=auto, A:x=auto with note, N=not recruitable in Part I, else "S# R#; extra".
+   ch = chapter the unit appears, from Marigold's planner (Cai's path). */
+const REC={};
+function rc(n,ch,a,b,c,d,note){REC[n]={ch,r:{cai:a,dietrich:b,theodora:c,leda:d},note}}
+rc('Cai',1,'A','N','N','N');
+rc('Tialla',1,'A','S3 R9; Cai paralogue, 3,000G','S3 R10; Cai paralogue, 3,000G','S3 R8; Cai paralogue, 3,000G');
+rc('Peter',1,'A','S3 R8; recruitment quest','S3 R7; recruitment quest','S3 R10; recruitment quest');
+rc('Ultand',6,'A:joins in Ch 6','S3 R5; recruitment quest','S3 R6; recruitment quest','S3 R8; recruitment quest');
+rc('Dietrich',null,'N','A','N','N');
+rc('Fabio',null,'N','A','N','S3 R9; Dietrich paralogue, after House Lamine is eliminated, a suitable item');
+rc('Esmeralda',5,'S3 R7; recruitment quest','A','S3 R9; recruitment quest','S3 R6; recruitment quest','Marigold lists Support 2 on Cai\'s path; KeenGamer lists Support 3.');
+rc('Mikaela',5,'S3 R5; 3,000G','A','S3 R8; 3,000G','S3 R6; 3,000G');
+rc('Theodora',null,'N','N','A','N');
+rc('Bonaventure',null,'N','N','A','N');
+rc('Tobias',null,'N','N','A','N');
+rc('Lilian',4,'S2 R8; 5,000G','S2 R8; 5,000G','A','S2 R7; 5,000G');
+rc('Lysander',4,'S3 R8; 5 Iron Spears','S3 R6; 5 Iron Spears','A','S3 R7; 5 Iron Spears');
+rc('Leda',null,'N','N','N','A');
+rc('Buccar',null,'N','S3 R8; Leda paralogue','S3 R8; Leda paralogue','A');
+rc('Sirocco',5,'S3 R9; recruitment quest','S3 R9; recruitment quest','S1 R5; recruitment quest','A');
+rc('Olympia',5,'S3 R8; 3 quests','S3 R6; 3 quests','S3 R9; 3 quests','A');
+rc('Mu',5,'S3 R9; 3 Glirmosa','S3 R7; 3 Glirmosa','S3 R9; 3 Glirmosa','A');
+rc('Gaitz',null,'N','S3 R10; Bertrand paralogue, after Mane of Flames is eliminated','N','N');
+rc('Jester',3,'S3 R10; 3 quests','S3 R6; 3 quests','S3 R9; 3 quests','S3 R10; 3 quests');
+rc('Goliath',4,'S3 R7; 3 Giant\'s Meat','S3 R6; 3 Giant\'s Meat','S3 R9; 3 Giant\'s Meat','S3 R10; 3 Giant\'s Meat');
+rc('Dante',3,'S3 R10; 8,000G','S2 R8; 8,000G','S3 R6; 8,000G','S3 R10; 8,000G');
+rc('Ursula',10,'S3 R10; Talimun paralogue, answer "Yes" three times','S3 R7; Talimun paralogue, answer "Yes" three times','S3 R9; Talimun paralogue, answer "Yes" three times','N');
+rc('Ludia',6,'S3 R9; recruitment quest','S3 R9; recruitment quest','S3 R7; recruitment quest','S3 R7; recruitment quest');
+rc('Simon',5,'S3 R8; choose Tails','S3 R7; choose Tails','S3 R7; choose Tails','S3 R6; choose Tails');
+rc('Fianna',5,'S3 R8; 3,000G','S3 R7; 3,000G','S3 R9; 3,000G','S3 R5; 3,000G');
+rc('Diego',11,'S3 R10; Orchel paralogue','S3 R9; Orchel paralogue','S2 R8; Orchel paralogue','S3 R8; Orchel paralogue');
+rc('Loretta',4,'S3 R7; 3 Iron Swords','S3 R9; 3 Iron Swords','S3 R5; 3 Iron Swords','S3 R5; 3 Iron Swords');
+rc('Seteth',4,'S3 R6; recruitment quest','N','S3 R6; recruitment quest','S3 R10; recruitment quest');
+rc('Ninae',4,'S3 R6; 1 Paradise Fish','S3 R8; 1 Paradise Fish','S3 R6; 1 Paradise Fish','S3 R8; 1 Paradise Fish');
+rc('Nezha',5,'S3 R6; 3 Sandworm Meat','S3 R10; 3 Sandworm Meat','S2 R6; 3 Sandworm Meat','S3 R9; 3 Sandworm Meat');
+rc('Sha Lan',null,'N','S3 R10; Anatolia paralogue, three quiz answers','N','S3 R8; Anatolia paralogue, three quiz answers');
+rc('Dadao',5,'S3 R7; 2 Kothar Gar','S3 R10; 2 Kothar Gar','S2 R5; 2 Kothar Gar','S2 R5; 2 Kothar Gar');
+rc('Halvin',5,'S3 R5; 10 Dates','S3 R9; 10 Dates','S3 R7; 10 Dates','S3 R7; 10 Dates');
+rc('Guzran',3,'A:joins in the tutorial','S3 R8','S3 R8','S1 R3');
+rc('Yang Jie',3,'S2 R3; three quiz answers','A:joins in the tutorial','S3 R9; three quiz answers','S3 R8; three quiz answers');
+rc('Io',3,'S3 R10; 4,000G','S2 R3; 800G','S3 R10; 4,000G','S1 R6; 1,500G');
+rc('Peppe',10,'S1 R9; Bertrand paralogue','S3 R8; Bertrand paralogue','S2 R7; Bertrand paralogue','N');
+rc('Noctula',3,'S1 R4','S1 R6','S1 R3','S3 R8');
+rc('Sofia',3,'S3 R9','S3 R9','A:joins in the tutorial','S3 R7');
+rc('Catania',3,'S3 R10','S1 R8','S3 R7','A:joins in the tutorial');
+rc('Nydine',3,'S1 R6; 2 Bronze Axes','S2 R5; 2 Bronze Axes','S3 R5; 3 Iron Axes','S3 R10; 3 Iron Axes');
+rc('Zarcone',5,'S3 R8; negotiate his fee','S3 R7; negotiate his fee','S1 R4; negotiate his fee','S2 R5; negotiate his fee');
+rc('Majide',5,'S2 R5; answer three questions','S3 R8; answer three questions','S3 R8; answer three questions','S3 R9; answer three questions');
+rc('Benditz',6,'S3 R9','S2 R7','S1 R8','S3 R7');
+rc('Inyoni',8,'S3 R8; 6,000G','S3 R8; 6,000G','S1 R9; 4,000G','S1 R7; 3,000G');
+rc('Jasmine',6,'S1 R8; 2,000G','S3 R9; 5,000G','S3 R8; 5,000G','S2 R4; 500G');
+rc('Alexandra',7,'S2 R7','S3 R8','S1 R6','S3 R10');
+rc('Nuzzuo',8,'S2 R6; 3 Iron Bows','S1 R9; 2 Iron Bows','S1 R6; 3 Iron Bows','S3 R9; 3 Iron Bows');
+rc('Kiroc',6,'S3 R8; 8 Pure Water','S1 R4; 3 Pure Water','S3 R10; 8 Pure Water','S1 R4; 3 Pure Water');
+const LATE={
+ Orchel:'Part III, Section 1. Joins automatically; clear Orchel\'s paralogue in Part I to be safe.',
+ Talimun:'Part III, Section 1. Joins automatically; clear Talimun\'s paralogue in Part I to be safe.',
+ Anatolia:'Part III, Section 1. Joins automatically; clear Anatolia\'s paralogue in Part I to be safe.',
+ Bertrand:'Guest in Part II, full unit in Part III. Clear Bertrand\'s paralogue in Part I to be safe.',
+ Creek:'Part II, Chapter 2. Finish "My Late Sister\'s Accessory" in Part I, then defeat Creek.',
+ Nathan:'Part II, Chapter 3. Recruit Creek first, then have Creek land the killing blow.',
+ Centurio:'Part III, Section 2. Complete the Rescue Centurio quest.',
+ 'Hong Hua':'Prologue and Part III. Joins automatically.',
+ Troy:'Prologue and Part III. Joins automatically.',
+ Aswan:'Part III, Section 5. Keep him alive as a guest in Part II, Chapter 3.',
+ Tahonia:'Part III, Section 5. Keep her alive as a guest in Part II, Chapter 3.',
+ Klapka:'Part III, Section 6. Keep him alive as a guest in Part III, Section 5.',
+ Eshmel:'Prologue and Part III. Joins automatically.'
+};
+const PART2=new Set(['Creek','Nathan','Bertrand']);
+function parseReq(s){
+  if(!s)return null;
+  if(s==='N')return {k:'na'};
+  if(s.startsWith('A'))return {k:'auto',txt:s.slice(2)||''};
+  const m=s.match(/S(\d)\s+R(\d+);?\s*(.*)/);
+  return {k:'req',s:+m[1],r:+m[2],cond:m[3]||''};
+}
+function prog(pk){st.prog=st.prog||{};return st.prog[pk]||(st.prog[pk]={ch:1,rn:1})}
+/* status of unit u on path pk: {k, label, detail} */
+function status(u,pk){
+  const rec=REC[u.n],late=LATE[u.n];
+  if(pk==='part3'){
+    if(late)return {k:'later',label:'Joins in Part II/III',detail:late};
+    return {k:'carry',label:'From Part I',detail:'Carries over if recruited on any Part I path.'};
+  }
+  if(!rec){
+    if(PART2.has(u.n))return {k:'later',label:'Joins in Part II',detail:late};
+    return {k:'na',label:'Part III only',detail:late||'Not available in Parts I and II.'};
+  }
+  const q=parseReq(rec.r[pk]),p=prog(pk);
+  const chNote=rec.ch&&pk==='cai'&&p.ch<rec.ch?` Appears in Chapter ${rec.ch}.`:'';
+  if(q.k==='na')return {k:'na',label:'Not on this path',detail:`${u.n} cannot be recruited on ${PATHS[pk].lord}'s path in Part I.`+(late?' '+late:'')};
+  if(q.k==='auto')return {k:chNote?'locked':'auto',label:chNote?'Not yet':'Joins automatically',detail:(q.txt?q.txt[0].toUpperCase()+q.txt.slice(1)+'.':'Joins with the lord\'s army.')+chNote};
+  const need=`Support ${q.s}, Renown ${q.r}`+(q.cond?` · ${q.cond}`:'');
+  if(chNote)return {k:'locked',label:'Not yet',detail:need+'.'+chNote};
+  if(p.rn<q.r)return {k:'locked',label:`Needs Renown ${q.r}`,detail:`${need}. You are at Renown ${p.rn}.`};
+  return {k:'ready',label:'Recruitable now',detail:`${need}. Renown met; raise Support to ${q.s} and meet any extra condition.`};
+}
+const STATUSCLS={auto:'s-auto',ready:'s-ready',locked:'s-locked',na:'s-na',later:'s-later',carry:'s-carry',got:'s-got'};
+const P1KEYS=['cai','dietrich','theodora','leda'];
+/* explicit checkbox value, else auto-joiners default to recruited */
+function gotOn(n,pk){const v=st.got?.[pk]?.[n];if(v!==undefined)return v;return pk!=='part3'&&status(UM[n],pk).k==='auto'}
+function isGot(u,pk){
+  if(pk==='part3'&&!LATE[u.n]){const v=st.got?.part3?.[u.n];if(v!==undefined)return v;return P1KEYS.some(k=>(st.team[k]||[]).includes(u.n)&&gotOn(u.n,k))}
+  return gotOn(u.n,pk);
+}
+function gotFrom(u){return P1KEYS.filter(k=>(st.team[k]||[]).includes(u.n)&&gotOn(u.n,k)).map(k=>PATHS[k].lord)}
+
+const UM={};U.forEach(u=>{u.steps=u.path?u.path.split('>').map(s=>({inf:s.startsWith('*'),opts:s.replace('*','').split('/')})):[];u.pg=u.g.map(v=>v+(u.sog||0));UM[u.n]=u});
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const initials=n=>n.split(' ').map(p=>p[0]).join('').slice(0,2);
+const pathOf=u=>u.home||'none';
+function finalG(u,cn){const c=C[cn];return u.pg.map((v,i)=>v+(c?c.g[i]:0))}
+function classOptions(sel,suggest,allowBlank,blankLabel){
+  let h='';
+  if(allowBlank)h+=`<option value=""${sel===''?' selected':''}>${blankLabel||'(skip)'}</option>`;
+  if(suggest&&suggest.length){h+='<optgroup label="Suggested">'+suggest.map(n=>`<option${n===sel?' selected':''}>${esc(n)}</option>`).join('')+'</optgroup>'}
+  for(const t of TIERS.slice(1)){
+    const list=Object.values(C).filter(c=>c.t===t&&!(suggest||[]).includes(c.n));
+    h+=`<optgroup label="${t}">`+list.map(c=>`<option${c.n===sel?' selected':''}>${esc(c.n)}</option>`).join('')+'</optgroup>';
+  }
+  return h;
+}
+function warnings(u,cn){
+  const c=C[cn],out=[];if(!c)return out;
+  if(c.ex==='Cai'&&u.n!=='Cai')out.push(['bad',`${cn} is Cai-exclusive, so ${u.n} cannot certify into it. Consider ${altFor(u,cn)}.`]);
+  if(c.ex==='female')out.push(['',`${cn} is female-exclusive. Confirm ${u.n} qualifies before planning around it.`]);
+  if(c.uniq&&c.ex!=='Cai')out.push(['',`${cn} has one holder at a time${c.item?` and needs the ${c.item}`:''}.`]);
+  if(c.scale)out.push(['',`${cn} growth modifiers rise with level, so these numbers are its starting values.`]);
+  return out;
+}
+function altFor(u,cn){const a=(u.alt||'').split(' / ').find(x=>C[x]&&!C[x].ex);return a||'Great Knight or Bardinger'}
+
+/* ---------- state ---------- */
+const KEY='weave-route-planner-v1';
+function defaultState(){
+  const team={cai:[],dietrich:[],theodora:[],leda:[],part3:[]};
+  U.forEach(u=>{
+    ['cai','dietrich','theodora','leda'].forEach(k=>{const r=REC[u.n]?.r[k];if(r&&r.startsWith('A'))team[k].push(u.n)});
+    if(u.home==='part3')team.part3.push(u.n);
+  });
+  return {path:'cai',team,got:{},licMode:'planned',prog:{cai:{ch:1,rn:1},dietrich:{ch:1,rn:1},theodora:{ch:1,rn:1},leda:{ch:1,rn:1}},plan:{},compare:[['Dietrich','The Blade'],['Gaitz','Swordmaster'],['Jester','Swordmaster'],['Catania','Swordmaster']],withClass:true,rq:'',rf:'',ct:'All',cs:null};
+}
+let st=defaultState();
+try{const raw=localStorage.getItem(KEY);if(raw){const p=JSON.parse(raw);st=Object.assign(st,p)}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+function planFor(u){
+  if(st.plan[u.n])return st.plan[u.n];
+  if(!u.steps.length)return [''];
+  return u.steps.map(s=>s.opts[0]);
+}
+
+/* ---------- planner ---------- */
+function renderPlanner(){
+  const pk=st.path,P=PATHS[pk],team=st.team[pk]||[];
+  const tierCount={Beginner:0,Specialty:0,Advanced:0,Master:0},items={},uniq={},flagsTotal=[];
+  const licMode=st.licMode||'planned',gotN=team.filter(n=>isGot(UM[n],pk)).length;
+  team.forEach(n=>{const u=UM[n];if(licMode==='recruited'&&!isGot(u,pk))return;planFor(u).forEach(cn=>{const c=C[cn];if(!c)return;if(LIC[c.t])tierCount[c.t]++;if(c.item)items[c.item]=(items[c.item]||0)+1;if(c.uniq){(uniq[cn]=uniq[cn]||[]).push(n)}});
+    const end=planFor(u).filter(Boolean).slice(-1)[0];warnings(u,end).forEach(w=>{if(w[0]==='bad')flagsTotal.push(n)});});
+  const clashes=Object.entries(uniq).filter(([k,v])=>v.length>1);
+  const avail=U.filter(u=>!team.includes(u.n));
+  const groups={auto:[],ready:[],locked:[],later:[],carry:[],na:[]};
+  avail.forEach(u=>groups[status(u,pk).k].push(u));
+  const optLabel=u=>{const s=status(u,pk);const q=REC[u.n]&&pk!=='part3'?parseReq(REC[u.n].r[pk]):null;return `${u.n}${q&&q.k==='req'?` — S${q.s} R${q.r}`:''}`};
+  const teamStat={auto:0,ready:0,locked:0,later:0,carry:0,na:0};team.forEach(n=>{if(!isGot(UM[n],pk))teamStat[status(UM[n],pk).k]++});
+  const maxR=Math.max(0,...team.map(n=>{const q=REC[n]&&pk!=='part3'?parseReq(REC[n].r[pk]):null;return q&&q.k==='req'?q.r:0}));
+  const P1=pk!=='part3',pg=P1?prog(pk):null;
+  let h=`<div class="pathbar">`+Object.entries(PATHS).map(([k,p])=>`<button class="pathbtn ${p.cls}" data-act="path" data-k="${k}" aria-pressed="${k===pk}"><span class="emb">${p.emb} · ${esc(p.lord)}</span><small>${esc(p.clan)} · ${(st.team[k]||[]).length} units</small></button>`).join('')+`</div>`;
+  h+=`<div class="plannergrid"><div>`;
+  if(P1)h+=`<div class="progress"><span class="label">Your progress on ${esc(P.lord)}'s path</span>
+    <label>Chapter <input type="number" id="pch" min="1" max="30" value="${pg.ch}"></label>
+    <label>Renown <input type="number" id="prn" min="1" max="10" value="${pg.rn}"></label>
+    <span class="note">Units turn green once your Renown meets their gate. Chapter checks use Marigold's Cai-path timings, so they only apply on this path.</span></div>`;
+  else{const carry=U.filter(u=>!team.includes(u.n)&&gotFrom(u).length);
+    h+=`<div class="progress"><span class="note" style="flex-basis:auto;flex:1">Part III gathers everyone you recruited in Part I plus the story recruits below. Units ticked Recruited on any Part I path count as recruited here.</span><button class="btn" data-act="pull" ${carry.length?'':'disabled'}>${carry.length?`Add ${carry.length} Part I recruit${carry.length>1?'s':''}`:'No new Part I recruits'}</button></div>`}
+  const grp=(k,lab,dis)=>groups[k].length?`<optgroup label="${lab}">`+groups[k].map(u=>`<option value="${esc(u.n)}"${dis?' disabled':''}>${esc(optLabel(u))}</option>`).join('')+'</optgroup>':'';
+  h+=`<div class="addrow" style="margin-bottom:14px"><select id="addsel" aria-label="Unit to add"><option value="">Add a unit to ${esc(P.lord)}'s path…</option>`+
+     grp('auto','Joins automatically')+grp('ready','Recruitable at your Renown')+grp('locked','Renown or chapter not reached yet')+grp('carry','From Part I')+grp('later','Joins in Part II or III')+grp('na',P1?'Not recruitable on this path':'Part I only',P1)+
+     `</select><button class="btn primary" data-act="add">Add</button></div>`;
+  if(!team.length)h+=`<div class="empty">No units on this path yet. Add one above to start planning its certification route.</div>`;
+  h+=`<div class="cards">`+team.map(n=>unitCard(UM[n],pk)).join('')+`</div></div>`;
+  h+=`<aside class="summary"><div><div class="label">Path summary</div><h2 style="margin-top:2px">${esc(P.lord)}'s ${esc(P.emb)} path</h2></div>
+   <div><div class="label">Recruitment</div><dl class="kv"><dt><span class="dot s-got"></span><strong>Recruited</strong></dt><dd><strong>${gotN} / ${team.length}</strong></dd>${[['auto','Join automatically'],['ready','Recruitable now'],['locked','Still gated'],['later','Join later'],['carry','From Part I'],['na','Not on this path']].filter(([k])=>teamStat[k]).map(([k,l])=>`<dt><span class="dot ${STATUSCLS[k]}"></span>${l}</dt><dd>${teamStat[k]}</dd>`).join('')}${P1&&maxR?`<dt>Highest Renown gate</dt><dd>${maxR}</dd>`:''}</dl>${teamStat.na?`<div class="flag bad" style="margin-top:6px">${teamStat.na} planned unit${teamStat.na>1?'s':''} can't be recruited on this path in Part I.</div>`:''}</div>
+   <div><div class="label">Licenses needed</div><div class="seg" role="group" aria-label="Count licenses for"><button data-act="lic" data-m="planned" aria-pressed="${licMode==='planned'}">All planned</button><button data-act="lic" data-m="recruited" aria-pressed="${licMode==='recruited'}">Recruited only</button></div><dl class="kv">${Object.entries(tierCount).map(([t,v])=>`<dt>${t}</dt><dd>${v}</dd>`).join('')}<dt><strong>Total</strong></dt><dd><strong>${Object.values(tierCount).reduce((a,b)=>a+b,0)}</strong></dd></dl></div>
+   <div><div class="label">Special items</div>${Object.keys(items).length?`<dl class="kv">${Object.entries(items).map(([k,v])=>`<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`:'<p class="note" style="margin:4px 0 0">None planned.</p>'}</div>
+   <div class="flags"><div class="label">Conflicts</div>${clashes.length||flagsTotal.length?clashes.map(([k,v])=>`<div class="flag bad">${esc(k)} is planned for ${v.map(esc).join(', ')}. Only one unit can hold it at a time.</div>`).join('')+(flagsTotal.length?`<div class="flag bad">Blocked endpoint: ${flagsTotal.map(esc).join(', ')}.</div>`:''):'<p class="note" style="margin:0">No clashes on this path.</p>'}</div>
+   <div><div class="label">Save and share</div><p class="note" style="margin:4px 0 8px">Your plan is saved in this browser. Copy the code to back it up or move it to another device.</p>
+   <div class="addrow"><button class="btn" data-act="export">Copy plan code</button><button class="btn" data-act="reset">Reset</button></div>
+   <textarea id="io" placeholder="Paste a plan code here, then Load" aria-label="Plan code"></textarea><div class="addrow" style="margin-top:6px"><button class="btn" data-act="import">Load code</button><span id="iomsg" class="note"></span></div></div>
+  </aside></div>`;
+  $('#v-planner').innerHTML=`<h2>Team Planner</h2><p class="lead">Pick a path, add units, and set each certification step. Suggested classes come from the recommended route; any class can be chosen instead. Classes are earned by passing exams on weapon rank and Renown, so steps are a training direction, not strict prerequisites.</p>`+h;
+}
+function unitCard(u,pk){
+  const plan=planFor(u),end=plan.filter(Boolean).slice(-1)[0];
+  const got=isGot(u,pk),rnote=REC[u.n]?.note;
+  let sx=status(u,pk);
+  if(got){const from=pk==='part3'?gotFrom(u):[];sx={k:'got',label:'Recruited',detail:pk==='part3'&&!LATE[u.n]?(from.length?`Recruited on ${from.join(' and ')}'s path in Part I.`:'Marked as recruited in Part III.'):'On your roster.'}}
+  else if(pk==='part3'&&!LATE[u.n])sx={k:'locked',label:'Not recruited in Part I',detail:'Mark this unit recruited on a Part I path, or tick it here if it carried over another way.'};
+  const fg=finalG(u,end),mx=Math.max(...fg);
+  const rows=(u.steps.length?u.steps:[{opts:[]}]).map((s,i)=>{
+    const cn=plan[i]??'';const c=C[cn];
+    return `<li><span class="tier ${c?'t-'+c.t:''}">${c?c.t:'—'}</span><select data-act="step" data-u="${esc(u.n)}" data-i="${i}" aria-label="${esc(u.n)} step ${i+1}">${classOptions(cn,s.opts,true,u.steps.length?'(skip)':'Keep joining class')}</select>${s.inf?'<span class="inf">Inferred step: the guide leaves this open</span>':''}</li>`}).join('');
+  const w=warnings(u,end);
+  return `<article class="ucard${got?' is-got':''}"><header><span class="mono-badge ${PATHS[u.home]?.cls||'c-none'}">${initials(u.n)}</span><div class="grow"><h3>${esc(u.n)}</h3><span class="note">${esc(u.f)} · ${esc(u.role)}</span></div><label class="gotbox"><input type="checkbox" data-act="got" data-u="${esc(u.n)}" ${got?'checked':''}> Recruited</label><button class="btn ghost" data-act="rm" data-u="${esc(u.n)}" aria-label="Remove ${esc(u.n)}">Remove</button></header>
+  <div class="recruit ${STATUSCLS[sx.k]}"><strong>${esc(sx.label)}</strong><span>${esc(sx.detail)}</span>${rnote&&pk==='cai'?`<span class="note">${esc(rnote)}</span>`:''}</div>
+  <ol class="chain">${rows}</ol>
+  <div><div class="label" style="margin-bottom:4px">Growth rates ${end?'as '+esc(end):'(personal only)'}</div>${miniBars(fg,mx)}</div>
+  ${u.note?`<p class="note" style="margin:0">${esc(u.note)}</p>`:''}
+  ${w.length?`<div class="flags">${w.map(x=>`<div class="flag ${x[0]}">${esc(x[1])}</div>`).join('')}</div>`:''}
+  </article>`;
+}
+function miniBars(fg,mx){return `<div class="minibars">`+fg.map((v,i)=>`<div class="mb"><b>${v}</b><div class="col"><i class="${v===mx?'hi':''}" style="height:${Math.max(0,Math.min(100,v))}%"></i></div><span>${S[i]}</span></div>`).join('')+`</div>`}
+
+/* ---------- compare ---------- */
+function renderCompare(){
+  const slots=st.compare;
+  let h=`<h2>Compare Units</h2><p class="lead">Pick up to four units and a class for each. Final growth is personal growth plus the class modifier; the highest value in each row is marked. Use it to settle who should take a contested class, or whether a unit fits one class better than another.</p>`;
+  h+=`<div class="slots">`+[0,1,2,3].map(i=>{const [un,cn]=slots[i]||['',''];const u=UM[un];
+    return `<div class="slot"><span class="label">Slot ${i+1}</span><select data-act="cu" data-i="${i}" aria-label="Unit in slot ${i+1}"><option value="">— none —</option>${U.map(x=>`<option${x.n===un?' selected':''}>${esc(x.n)}</option>`).join('')}</select>
+    <select data-act="cc" data-i="${i}" aria-label="Class in slot ${i+1}" ${u?'':'disabled'}>${classOptions(cn||'',u?[u.best,...(u.alt?u.alt.split(' / '):[])].filter(x=>C[x]):[],true,'Personal growth only')}</select></div>`}).join('')+`</div>`;
+  const act=slots.map(([un,cn])=>({u:UM[un],c:C[cn]?cn:''})).filter(x=>x.u);
+  h+=`<div class="toggles"><label><input type="checkbox" id="withcls" ${st.withClass?'checked':''}> Include class modifier</label><span class="note">Showing ${st.withClass?'final':'personal'} growth rates (%).</span></div>`;
+  if(!act.length){h+=`<div class="empty">Choose a unit in any slot to start comparing.</div>`;$('#v-compare').innerHTML=h;return}
+  const vals=act.map(x=>st.withClass?finalG(x.u,x.c):x.u.pg.slice());
+  h+=`<div class="scroll"><table><thead><tr><th>Stat</th>${act.map(x=>`<th>${esc(x.u.n)}<br><span style="text-transform:none;letter-spacing:0;font-weight:400">${x.c?esc(x.c):'No class'}</span></th>`).join('')}</tr></thead><tbody>`;
+  S.forEach((s,i)=>{const row=vals.map(v=>v[i]),mx=Math.max(...row);
+    h+=`<tr><th scope="row">${s}</th>${act.map((x,j)=>{const v=row[j],d=st.withClass&&x.c?C[x.c].g[i]:0;return `<td><div class="cbar ${v===mx&&act.length>1?'best':''}"><div class="track"><i style="width:${Math.max(0,Math.min(100,v))}%"></i></div><b>${v}</b></div>${d?`<span class="delta ${d>0?'pos':'neg'}">${d>0?'+':''}${d} class</span>`:''}</td>`}).join('')}</tr>`});
+  const tot=vals.map(v=>v.reduce((a,b)=>a+b,0)),tmx=Math.max(...tot);
+  h+=`<tr><th scope="row">Total</th>${tot.map(t=>`<td class="num"><strong${t===tmx&&act.length>1?' style="color:var(--accent-ink)"':''}>${t}</strong></td>`).join('')}</tr>`;
+  h+=`</tbody></table></div>`;
+  h+=`<h2 style="margin-top:22px;font-size:18px">Class details</h2><div class="scroll"><table><thead><tr><th>Field</th>${act.map(x=>`<th>${esc(x.u.n)}</th>`).join('')}</tr></thead><tbody>`;
+  const f=(lab,fn)=>`<tr><th scope="row">${lab}</th>${act.map(x=>`<td>${x.c?fn(C[x.c],x.u):'—'}</td>`).join('')}</tr>`;
+  h+=f('Class',c=>esc(c.n)+` <span class="note">${c.t}</span>`)+f('Type / Mov',c=>`${esc(c.ty)} · <span class="mono">${c.mov}</span>`)+f('Wields',c=>c.w.map(k=>W[k]).join(', '))+
+     f('Stat bonus',c=>`<span class="mono" style="font-size:12.5px">${c.b.map((v,i)=>v?`${S[i]}${v>0?'+':''}${v}`:'').filter(Boolean).join(' ')||'—'}</span>`)+
+     f('Mastery',c=>esc(c.m))+f('Suggested skills',c=>esc([c.pri,c.sec].filter(Boolean).join(' · ')||'—'))+
+     f('Flags',(c,u)=>warnings(u,c.n).map(w=>`<div class="flag ${w[0]}" style="margin-top:2px">${esc(w[1])}</div>`).join('')||'<span class="note">None</span>');
+  h+=`</tbody></table></div>`;
+  $('#v-compare').innerHTML=h;
+}
+
+/* ---------- routes ---------- */
+function fitRank(u){
+  const mean=u.pg.reduce((a,b)=>a+b,0)/9;const wts=u.pg.map(v=>Math.max(0,v-mean)+2);
+  return Object.values(C).filter(c=>c.t==='Master'&&!(c.ex==='Cai'&&u.n!=='Cai')).map(c=>({n:c.n,s:Math.round(c.g.reduce((a,g,i)=>a+g*wts[i],0)/wts.reduce((a,b)=>a+b,0)*10)/10})).sort((a,b)=>b.s-a.s).slice(0,5);
+}
+function recruitTable(u){
+  const rec=REC[u.n],late=LATE[u.n];
+  if(!rec)return `<div><div class="label" style="margin-bottom:4px">Recruitment</div><p class="note" style="margin:0">${esc(late||'')}</p></div>`;
+  const cell=k=>{const q=parseReq(rec.r[k]);
+    if(q.k==='na')return `<td class="s s-na">Not recruitable</td>`;
+    if(q.k==='auto')return `<td class="s s-auto">Auto${q.txt?` <span class="note">(${esc(q.txt)})</span>`:''}</td>`;
+    return `<td class="s s-ready"><span class="mono">S${q.s} · R${q.r}</span>${q.cond?`<br><span class="note">${esc(q.cond)}</span>`:''}</td>`};
+  return `<div><div class="label" style="margin-bottom:4px">Recruitment${rec.ch?` · appears Chapter ${rec.ch} on Cai's path`:''}</div><div class="scroll"><table class="rtable"><thead><tr>${['cai','dietrich','theodora','leda'].map(k=>`<th>${PATHS[k].emb} · ${PATHS[k].lord}</th>`).join('')}</tr></thead><tbody><tr>${['cai','dietrich','theodora','leda'].map(cell).join('')}</tr></tbody></table></div>${late?`<p class="note" style="margin:4px 0 0">${esc(late)}</p>`:''}${rec.note?`<p class="note" style="margin:4px 0 0">${esc(rec.note)}</p>`:''}</div>`;
+}
+function renderRoutes(){
+  const q=st.rq.toLowerCase(),f=st.rf;
+  const facs=[...new Set(U.map(u=>u.f))];
+  const list=U.filter(u=>(!q||(u.n+' '+u.best+' '+u.path+' '+u.role).toLowerCase().includes(q))&&(!f||u.f===f));
+  let h=`<h2>Class Routes</h2><p class="lead">The recommended certification route for every character, with the growth rates each step produces. Open a unit to see the full step table and a computed list of Master classes that best match its strongest personal growths.</p>
+  <div class="ladder">${Object.entries(TIERINFO).map(([t,v])=>`<div class="rung"><strong>${t}</strong>${esc(v)}</div>`).join('')}</div>
+  <div class="filters"><input type="search" id="rq" placeholder="Search unit, class or role" value="${esc(st.rq)}" aria-label="Search routes"><select id="rf" aria-label="Filter by faction"><option value="">All factions</option>${facs.map(x=>`<option${x===f?' selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
+  h+=list.map(u=>{
+    const steps=u.steps;
+    const line=steps.length?steps.map((s,i)=>s.opts.map(o=>`<span class="opt${i===steps.length-1?' end':''}">${s.inf?'*':''}${esc(o)}</span>`).join(' / ')).join('<span class="arrow">→</span>'):'<span class="note">Keep the class and weapon ranks they join with</span>';
+    const pk=u.home;
+    const body=steps.length?`<div class="scroll"><table><thead><tr><th>Step</th><th>Class</th>${S.map(s=>`<th class="num">${s}</th>`).join('')}</tr></thead><tbody>
+      <tr><td>—</td><td class="note">Personal${u.sog?' (with Signs of Growth)':''}</td>${u.pg.map(v=>`<td class="num">${v}</td>`).join('')}</tr>
+      ${steps.flatMap((s,i)=>s.opts.map(o=>{const fg=finalG(u,o);return `<tr><td>${i+1}</td><td>${esc(o)} <span class="note">${C[o]?.t||''}</span></td>${fg.map((v,k)=>`<td class="num"${v>=70?' style="color:var(--accent-ink);font-weight:600"':''}>${v}</td>`).join('')}</tr>`})).join('')}
+      </tbody></table></div>`:'';
+    const fit=fitRank(u);
+    const w=steps.length?[...new Set(steps.flatMap(s=>s.opts))].flatMap(o=>warnings(u,o)).filter(x=>x[0]==='bad'||/female/.test(x[1])):[];
+    const altW=(u.alt||'').split(' / ').flatMap(a=>warnings(u,a)).filter(x=>x[0]==='bad'||/female/.test(x[1]));
+    return `<details class="route"><summary><span><span class="rname">${esc(u.n)}</span><br><span class="chip ${PATHS[pk]?.cls||'c-none'}">${esc(u.f)}</span></span><span class="pathline">${line}</span><span class="note">${u.alt?'Alt: '+esc(u.alt):''}</span></summary>
+    <div class="rbody">${u.note?`<p class="note" style="margin:0">${esc(u.note)}</p>`:''}${recruitTable(u)}${body}
+    ${[...w,...altW].length?`<div class="flags">${[...w,...altW].map(x=>`<div class="flag ${x[0]}">${esc(x[1])}</div>`).join('')}</div>`:''}
+    <div><div class="label" style="margin-bottom:6px">Best Master-class growth fit (computed)</div><div class="fit">${fit.map(x=>`<span>${esc(x.n)}<b>${x.s}</b></span>`).join('')}</div><p class="note" style="margin:6px 0 0">Score is the class's growth modifiers weighted toward this unit's above-average personal growths. It ignores weapon ranks, so treat it as a second opinion next to the route above.</p></div>
+    <div class="addrow"><button class="btn" data-act="tocompare" data-u="${esc(u.n)}">Send to Compare</button></div></div></details>`}).join('')||`<div class="empty">No units match that search.</div>`;
+  $('#v-routes').innerHTML=h;
+}
+
+/* ---------- classes ---------- */
+function renderClasses(){
+  let list=Object.values(C).filter(c=>st.ct==='All'||c.t===st.ct);
+  if(st.cs!=null)list=list.slice().sort((a,b)=>b.g[st.cs]-a.g[st.cs]);
+  let h=`<h2>Classes</h2><p class="lead">Growth modifiers for all ${Object.keys(C).length} classes. Click a stat heading to sort by that growth bonus.</p>
+  <div class="filters"><select id="ct" aria-label="Tier">${['All',...TIERS].map(t=>`<option${t===st.ct?' selected':''}>${t}</option>`).join('')}</select>${st.cs!=null?`<button class="btn" data-act="unsort">Clear sort (${S[st.cs]})</button>`:''}</div>
+  <div class="scroll"><table><thead><tr><th>Class</th><th>Tier</th><th>Type</th><th class="num">Mov</th>${S.map((s,i)=>`<th class="num sort" data-act="sort" data-i="${i}"${st.cs===i?' style="color:var(--accent-ink)"':''}>${s}</th>`).join('')}<th>Wields</th><th>Mastery</th></tr></thead><tbody>`+
+  list.map(c=>`<tr><td><strong>${esc(c.n)}</strong>${c.ex?` <span class="note">${c.ex==='Cai'?'Cai only':'Female only'}</span>`:''}</td><td class="note">${c.t}</td><td class="note">${esc(c.ty)}</td><td class="num">${c.mov}</td>${c.g.map(v=>`<td class="num ${v>0?'pos':v<0?'neg':''}">${v>0?'+':''}${v}</td>`).join('')}<td style="white-space:nowrap">${c.w.map(k=>W[k]).join(', ')}</td><td>${esc(c.m)}</td></tr>`).join('')+`</tbody></table></div>`;
+  $('#v-classes').innerHTML=h;
+}
+
+/* ---------- wiring ---------- */
+/* ---------- deploy ---------- */
+function curClass(u){const v=st.cur?.[u.n];return v!==undefined?v:(planFor(u).find(Boolean)||'')}
+/* st.deploy[pk] = {active:name, sets:{name:{limit,on}}}; older saves stored {limit,on} directly */
+function depBook(pk){
+  st.deploy=st.deploy||{};let b=st.deploy[pk];
+  if(b&&b.on&&!b.sets)b=st.deploy[pk]={active:'Main',sets:{Main:{limit:b.limit||12,on:b.on}}};
+  if(!b)b=st.deploy[pk]={active:'Main',sets:{Main:{limit:12,on:(st.team[pk]||[]).filter(n=>isGot(UM[n],pk)).slice(0,12)}}};
+  if(!b.sets[b.active])b.active=Object.keys(b.sets)[0];
+  return b;
+}
+function dep(pk){const b=depBook(pk);return b.sets[b.active]}
+function uniqueName(b,base){let n=base,i=2;while(b.sets[n])n=`${base} ${i++}`;return n}
+const WKEYS=['Sw','Sp','Ax','Bw','Ga','BM','WM'];
+function coverage(units){
+  const r={n:units.length,w:{},heal:[],ranged:[],types:{Infantry:[],Cavalry:[],Flying:[],Armored:[]},lock:[],dance:[],def:[],res:[],fast:[],mov:[],noclass:[]};
+  WKEYS.forEach(k=>r.w[k]=[]);
+  units.forEach(u=>{const c=C[curClass(u)];if(!c){r.noclass.push(u.n);return}
+    c.w.forEach(k=>{if(r.w[k])r.w[k].push(u.n)});
+    if(c.w.includes('WM'))r.heal.push(u.n);
+    if(c.w.includes('Bw')||c.w.includes('BM'))r.ranged.push(u.n);
+    ['Infantry','Cavalry','Flying','Armored'].forEach(t=>{if(c.ty.includes(t))r.types[t].push(u.n)});
+    if((c.util||'').includes('Locktouch')||c.n==='The Calamity')r.lock.push(u.n);
+    if(c.n==='Dancer'||c.n==='The Apsara')r.dance.push(u.n);
+    const fg=finalG(u,c.n);if(fg[5]>=50)r.def.push(u.n);if(fg[6]>=50)r.res.push(u.n);if(fg[3]>=60)r.fast.push(u.n);
+    r.mov.push(c.mov)});
+  return r;
+}
+function renderDeploy(){
+  const pk=st.path,P=PATHS[pk],team=(st.team[pk]||[]).slice(),d=dep(pk);
+  d.on=d.on.filter(n=>team.includes(n));
+  team.sort((a,b)=>(isGot(UM[b],pk)-isGot(UM[a],pk))||U.indexOf(UM[a])-U.indexOf(UM[b]));
+  const fielded=d.on.map(n=>UM[n]),cv=coverage(fielded);
+  let h=`<h2>Deploy</h2><p class="lead">Pick who you're fielding on the next map and the class each unit is in right now. The coverage panel shows what the group can do and what it's missing. Set the slot limit to the number the map's prep screen allows.</p>`;
+  h+=`<div class="pathbar">`+Object.entries(PATHS).map(([k,p])=>`<button class="pathbtn ${p.cls}" data-act="dpath" data-k="${k}" aria-pressed="${k===pk}"><span class="emb">${p.emb} · ${esc(p.lord)}</span><small>${dep(k).on.filter(n=>(st.team[k]||[]).includes(n)).length} fielded</small></button>`).join('')+`</div>`;
+  const book=depBook(pk),names=Object.keys(book.sets);
+  h+=`<div class="lineups"><span class="label">Lineup</span><div class="lchips" role="group" aria-label="Saved lineups">`+names.map(n=>`<button class="lchip" data-act="lsel" data-n="${esc(n)}" aria-pressed="${n===book.active}">${esc(n)} <span class="mono">${book.sets[n].on.filter(x=>team.includes(x)).length}</span></button>`).join('')+`</div>
+    <div class="lform"><input type="text" id="lname" maxlength="32" placeholder="Name, e.g. Flier map" aria-label="Lineup name" value="${esc(st.lnameDraft||'')}">
+    <button class="btn" data-act="lnew">New empty</button><button class="btn" data-act="ldup">Copy current</button><button class="btn" data-act="lren">Rename</button>
+    ${st.lconfirm===pk?`<span class="note">Delete "${esc(book.active)}"?</span><button class="btn danger" data-act="ldelok">Delete</button><button class="btn" data-act="ldelno">Keep</button>`:`<button class="btn ghost" data-act="ldel" ${names.length<2?'disabled title="Keep at least one lineup"':''}>Delete</button>`}
+    <span id="lmsg" class="note">${esc(st.lmsg||'')}</span></div></div>`;
+  st.lmsg='';
+  h+=`<div class="plannergrid"><div>`;
+  const over=d.on.length>d.limit;
+  h+=`<div class="progress"><label>Slots <input type="number" id="dlim" min="1" max="30" value="${d.limit}"></label><span class="mono${over?' neg':''}" style="font-weight:600">${d.on.length} / ${d.limit} fielded</span><span style="flex:1"></span><button class="btn" data-act="dclear">Clear</button><button class="btn" data-act="dfill">Field recruited</button></div>`;
+  if(!team.length)h+=`<div class="empty">${esc(P.lord)}'s path has no units yet. Add them in the Team Planner first.</div>`;
+  else h+=`<div class="scroll"><table class="dtable"><thead><tr><th>Field</th><th>Unit</th><th>Current class</th><th class="num">Mov</th><th>Wields</th></tr></thead><tbody>`+team.map(n=>{const u=UM[n],on=d.on.includes(n),g=isGot(u,pk),cn=curClass(u),c=C[cn];
+    return `<tr class="${on?'on':''}${g?'':' notgot'}"><td><input type="checkbox" data-act="field" data-u="${esc(n)}" ${on?'checked':''} aria-label="Field ${esc(n)}"></td><td><strong>${esc(n)}</strong><br><span class="note">${g?'Recruited':'Not recruited yet'}</span></td>
+    <td><select data-act="dcls" data-u="${esc(n)}" aria-label="${esc(n)} current class">${classOptions(cn,[...new Set(planFor(u).filter(Boolean))],true,'Joining class (not set)')}</select></td>
+    <td class="num">${c?c.mov:'—'}</td><td class="note" style="white-space:nowrap">${c?c.w.map(k=>W[k]).join(', '):'—'}</td></tr>`}).join('')+`</tbody></table></div>`;
+  h+=`</div>`;
+  /* coverage panel */
+  const gaps=[];
+  if(over)gaps.push(['bad',`${d.on.length} units fielded but only ${d.limit} slots. Bench ${d.on.length-d.limit}.`]);
+  if(cv.n){
+    if(!cv.heal.length)gaps.push(['bad','No White Magic user, so nobody on the field can heal.']);
+    else if(cv.heal.length===1&&cv.n>=8)gaps.push(['',`Only one healer (${cv.heal[0]}). If they go down, healing stops.`]);
+    if(!cv.ranged.length)gaps.push(['bad','No bow or Black Magic user. Nothing can attack from range or counter at 2 range.']);
+    if(!cv.res.length)gaps.push(['','No unit with 50%+ Resistance growth in their current class. Enemy mages will have soft targets.']);
+    if(!cv.def.length)gaps.push(['','No unit with 50%+ Defense growth in their current class to hold a chokepoint.']);
+    if(!cv.types.Flying.length)gaps.push(['','No flier to cross water, cliffs or walls.']);
+    if(cv.types.Armored.length>=3)gaps.push(['',`${cv.types.Armored.length} armored units fielded. Expect the group to move at the pace of Mov 4 on large maps.`]);
+    if(!cv.lock.length)gaps.push(['','No Locktouch unit. Chests and doors need keys.']);
+    if(cv.noclass.length)gaps.push(['',`${cv.noclass.join(', ')} ${cv.noclass.length>1?'have':'has'} no current class set, so ${cv.noclass.length>1?'they are':'it is'} left out of coverage.`]);
+  }
+  const wcell=k=>{const l=cv.w[k];return `<div class="wcell${l.length?'':' zero'}" title="${esc(l.join(', '))}"><b>${l.length}</b><span>${W[k]}</span></div>`};
+  const avgMov=cv.mov.length?(cv.mov.reduce((a,b)=>a+b,0)/cv.mov.length).toFixed(1):'—';
+  const roleRow=(lab,l,hint)=>`<dt title="${esc(hint)}">${lab}</dt><dd>${l.length}${l.length?` <span class="note" style="font-family:var(--f-body)">${esc(l.slice(0,3).join(', '))}${l.length>3?' +'+(l.length-3):''}</span>`:''}</dd>`;
+  h+=`<aside class="summary"><div><div class="label">Coverage</div><h2 style="margin-top:2px">${cv.n} fielded</h2></div>
+    ${cv.n?`<div><div class="label">Weapon types</div><div class="wgrid">${WKEYS.map(wcell).join('')}</div></div>
+    <div><div class="label">Roles</div><dl class="kv kv-roles">${roleRow('Healers',cv.heal,'Can wield White Magic')}${roleRow('Ranged',cv.ranged,'Bow or Black Magic')}${roleRow('Def 50%+',cv.def,'Defense growth in current class')}${roleRow('Res 50%+',cv.res,'Resistance growth in current class')}${roleRow('Spd 60%+',cv.fast,'Speed growth in current class')}${roleRow('Locktouch',cv.lock,'Opens chests and doors')}${roleRow('Dance',cv.dance,'Grants an ally another action')}</dl></div>
+    <div><div class="label">Movement</div><dl class="kv">${Object.entries(cv.types).map(([t,l])=>`<dt>${t}</dt><dd>${l.length}</dd>`).join('')}<dt>Average Mov</dt><dd>${avgMov}</dd></dl></div>`:'<p class="note" style="margin:0">Tick units on the left to see what the group covers.</p>'}
+    <div class="flags"><div class="label">Gaps</div>${cv.n?(gaps.length?gaps.map(g=>`<div class="flag ${g[0]}">${esc(g[1])}</div>`).join(''):'<div class="flag ok">No gaps found. This group covers healing, range, both tank roles, a flier and chests.</div>'):'<p class="note" style="margin:0">None yet.</p>'}</div>
+    <p class="note" style="margin:0">Tank roles use growth rates because base stats aren't public yet. They show who will grow into the role, not who has the stats today.</p>
+  </aside></div>`;
+  $('#v-deploy').innerHTML=h;
+}
+
+const R={planner:renderPlanner,deploy:renderDeploy,compare:renderCompare,routes:renderRoutes,classes:renderClasses};
+let tab='planner';
+try{const h=location.hash.slice(1);if(R[h])tab=h}catch(e){}
+function show(t){tab=t;document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));for(const k in R)$('#v-'+k).hidden=k!==t;R[t]()}
+document.querySelector('nav.tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(b)show(b.dataset.tab)});
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act]');if(!b||b.tagName==='SELECT')return;const a=b.dataset.act;
+  if(['lsel','lnew','ldup','lren','ldel','ldelok','ldelno'].includes(a)){
+    const bk=depBook(st.path),raw=($('#lname')?.value||'').trim();st.lnameDraft=raw;
+    if(a!=='ldel'&&a!=='ldelok')st.lconfirm=null;
+    if(a==='lsel'){bk.active=b.dataset.n}
+    else if(a==='lnew'||a==='ldup'){const n=uniqueName(bk,raw||(a==='lnew'?'Lineup':bk.active+' copy'));const src=bk.sets[bk.active];bk.sets[n]=a==='lnew'?{limit:src.limit,on:[]}:{limit:src.limit,on:src.on.slice()};bk.active=n;st.lnameDraft='';st.lmsg=`Created "${n}".`}
+    else if(a==='lren'){if(!raw)st.lmsg='Type a new name first.';else if(raw===bk.active)st.lmsg='';else if(bk.sets[raw])st.lmsg=`"${raw}" already exists.`;else{const o=bk.active;bk.sets[raw]=bk.sets[o];delete bk.sets[o];bk.active=raw;st.lnameDraft='';st.lmsg=`Renamed to "${raw}".`}}
+    else if(a==='ldel'){st.lconfirm=st.path}
+    else if(a==='ldelok'){const o=bk.active;delete bk.sets[o];bk.active=Object.keys(bk.sets)[0];st.lconfirm=null;st.lmsg=`Deleted "${o}".`}
+    else if(a==='ldelno'){st.lconfirm=null}
+    save();renderDeploy();
+  }
+  else if(a==='dpath'){st.path=b.dataset.k;st.lconfirm=null;save();renderDeploy()}
+  else if(a==='dclear'){dep(st.path).on=[];save();renderDeploy()}
+  else if(a==='dfill'){const d=dep(st.path);d.on=(st.team[st.path]||[]).filter(n=>isGot(UM[n],st.path)).slice(0,d.limit);save();renderDeploy()}
+  else if(a==='pull'){U.forEach(u=>{if(!st.team.part3.includes(u.n)&&gotFrom(u).length)st.team.part3.push(u.n)});save();renderPlanner()}
+  else if(a==='lic'){st.licMode=b.dataset.m;save();renderPlanner()}
+  else if(a==='path'){st.path=b.dataset.k;save();renderPlanner()}
+  else if(a==='add'){const v=$('#addsel').value;if(v){st.team[st.path].push(v);save();renderPlanner()}}
+  else if(a==='rm'){st.team[st.path]=st.team[st.path].filter(n=>n!==b.dataset.u);save();renderPlanner()}
+  else if(a==='reset'){const keep=st.path;st=defaultState();st.path=keep;save();renderPlanner()}
+  else if(a==='export'){const code=btoa(unescape(encodeURIComponent(JSON.stringify({team:st.team,plan:st.plan,prog:st.prog,got:st.got,deploy:st.deploy,cur:st.cur}))));const ta=$('#io');ta.value=code;
+    try{await navigator.clipboard.writeText(code);$('#iomsg').textContent='Copied to clipboard.'}catch(err){ta.select();$('#iomsg').textContent='Code selected. Copy it manually.'}}
+  else if(a==='import'){try{const p=JSON.parse(decodeURIComponent(escape(atob($('#io').value.trim()))));if(!p.team)throw 0;st.team=Object.assign(defaultState().team,p.team);st.plan=p.plan||{};if(p.prog)st.prog=p.prog;st.got=p.got||{};st.deploy=p.deploy||{};st.cur=p.cur||{};save();renderPlanner();$('#iomsg').textContent='Plan loaded.'}catch(err){$('#iomsg').textContent='That code could not be read. Check that it was copied in full.'}}
+  else if(a==='tocompare'){const u=UM[b.dataset.u];const i=st.compare.findIndex(x=>!x||!x[0]);const slot=i<0?3:i;st.compare[slot]=[u.n,C[u.best]?u.best:''];save();show('compare')}
+  else if(a==='sort'){st.cs=+b.dataset.i;save();renderClasses()}
+  else if(a==='unsort'){st.cs=null;save();renderClasses()}
+});
+document.addEventListener('change',e=>{
+  const t=e.target;const a=t.dataset.act;
+  if(a==='field'){const d=dep(st.path),n=t.dataset.u;d.on=t.checked?[...new Set([...d.on,n])]:d.on.filter(x=>x!==n);save();renderDeploy()}
+  else if(a==='dcls'){st.cur=st.cur||{};st.cur[t.dataset.u]=t.value;save();renderDeploy()}
+  else if(t.id==='dlim'){dep(st.path).limit=Math.max(1,Math.min(30,parseInt(t.value)||1));save();renderDeploy()}
+  else if(a==='got'){st.got=st.got||{};(st.got[st.path]=st.got[st.path]||{})[t.dataset.u]=t.checked;save();renderPlanner()}
+  else if(a==='step'){const u=UM[t.dataset.u];const p=planFor(u).slice();p[+t.dataset.i]=t.value;st.plan[u.n]=p;save();renderPlanner()}
+  else if(a==='cu'){const i=+t.dataset.i;const u=UM[t.value];st.compare[i]=u?[u.n,C[u.best]?u.best:'']:['',''];save();renderCompare()}
+  else if(a==='cc'){const i=+t.dataset.i;st.compare[i][1]=t.value;save();renderCompare()}
+  else if(t.id==='pch'||t.id==='prn'){const p=prog(st.path);const v=Math.max(1,Math.min(t.id==='prn'?10:30,parseInt(t.value)||1));if(t.id==='pch')p.ch=v;else p.rn=v;save();renderPlanner()}
+  else if(t.id==='withcls'){st.withClass=t.checked;save();renderCompare()}
+  else if(t.id==='rf'){st.rf=t.value;save();renderRoutes()}
+  else if(t.id==='ct'){st.ct=t.value;save();renderClasses()}
+});
+document.addEventListener('input',e=>{if(e.target.id==='rq'){st.rq=e.target.value;const pos=e.target.selectionStart;renderRoutes();const el=$('#rq');el.focus();try{el.setSelectionRange(pos,pos)}catch(err){}}});
+show(tab);
+</script>
+<script>
+if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+let deferredInstall=null;const ib=document.getElementById('installbtn');
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;ib.hidden=false});
+ib.addEventListener('click',async()=>{if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;ib.hidden=true});
+addEventListener('appinstalled',()=>{ib.hidden=true});
+</script>
+</body>
+</html>
